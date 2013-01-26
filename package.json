@@ -1,0 +1,25 @@
+{
+  "name": "1",
+  "version": "0.0.1",
+  "description": "Clustering module based on 0MQ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "keywords": [
+    "0mq",
+    "cluster",
+    "mq",
+    "queue",
+    "nodes"
+  ],
+  "author": "Marco Oliveira",
+  "license": "MIT",
+  "dependencies": {
+    "mdns": "~1.1.0",
+    "zmq": "~2.2.0",
+    "mout": "~0.2.0",
+    "uuid": "0.0.2"
+  }
+}
