@@ -1,12 +1,27 @@
 var EventEmitter = require('events').EventEmitter;
-var zmq  = require('zmq');
-var mdns = require('mdns');
-var mout = require('mout');
-//var uuid = require('uuid');
+var zmq          = require('zmq');
+var mdns         = require('mdns');
+var mout         = require('mout');
+var uuid         = require('node-uuid');
+var net          = require('net')
 
 function freeport(cb) {
-    cb(mout.random.randInt(1001, 10000));
+    var server = net.createServer();
+    var port;
+
+    server.on('listening', function () {
+        port = server.address().port;
+        server.close();
+    });
+
+    server.on('close', function () {
+        cb(null, port);
+    });
+
+    server.listen(0);
 }
+
+// ------------------------------ CONSTRUCTOR ----------------------------------
 
 var Node = function(opt) {
     opt = opt || {};
@@ -15,7 +30,7 @@ var Node = function(opt) {
     this._cluster = opt.cluster || 'default';
 
     // id of the node
-//    this._id      = opt.id || uuid.v4();
+    this._id      = opt.id || uuid.v4();
 
     // port in which the node will be publishing messages
     this._pubPort = opt.pubPort; // if port is not defined, a free one is used
@@ -44,31 +59,51 @@ Node.prototype.join = function (callback) {
     this._pub = zmq.socket('pub');
     this._sub = zmq.socket('sub');
 
+    // prepare sub
+    this._sub.on('message', this._handleMessage);
+
+    // bind function for the pub socket
     var bindPub = function () {
         this._pub.bind(this._getBind(this._addr, this._pubPort), function (err) {
             if (err) {
                 return callback(err);
             }
 
+            // successfuly joined
+            this._inCluster = true;
             callback();
-        })
+        }.bind(this));
     }.bind(this);
 
+    // if pub port is defined, use it. Else, find a free one
     if (this._pubPort) {
-        bindPort();
+        bindPub();
     }
     else {
-        freeport(function (port) {
+        freeport(function (err, port) {
+            if (err) {
+                return callback(err);
+            }
+
             this._pubPort = port;
 
-            bindPort();
+            bindPub();
         }.bind(this));
     }
+
+    return this;
 };
 
 Node.prototype.leave = function () {
     this._sub.close();
     this._pub.close();
+
+    delete this._sub;
+    delete this._pub;
+
+    this._inCluster = false;
+
+    return this;
 };
 
 Node.prototype.startAdvertise = function (callback) {
@@ -88,19 +123,71 @@ Node.prototype.stopDiscovery = function (callback) {
 };
 
 Node.prototype.subscribe = function (channel) {
+    if (!this._inCluster) {
+        throw new Error('Can\'t subscribe while not in cluster');
+    }
 
+    this._sub.subscribe(channel);
+
+    this._emitter.emit('subscribe', channel);
+
+    return this;
 };
 
 Node.prototype.unsubscribe = function (channel) {
+    if (!this._inCluster) {
+        throw new Error('Can\'t unsubscribe while not in cluster');
+    }
 
+    this._sub.unsubscribe(channel);
+
+    this._emitter.emit('unsubscribe', channel);
+
+    return this;
 };
 
 Node.prototype.publish = function (channel, payload) {
+    if (!this._inCluster) {
+        throw new Error('Can\'t publish while not in cluster');
+    }
 
+    this._pub.send(channel + ':' + payload)
 };
 
 Node.prototype.getCluster = function () {
     return this._cluster;
+};
+
+Node.prototype.addListener = function () {
+    return this._emitter.addListener.apply(this._emitter, arguments);
+};
+
+Node.prototype.on = function () {
+    return this._emitter.on.apply(this._emitter, arguments);
+};
+
+Node.prototype.once = function () {
+    return this._emitter.once.apply(this._emitter, arguments);
+};
+
+Node.prototype.removeListener = function () {
+    return this._emitter.removeListener.apply(this._emitter, arguments);
+};
+
+Node.prototype.removeAllListeners = function () {
+    return this._emitter.removeAllListeners.apply(this._emitter, arguments);
+};
+
+Node.prototype.setMaxListeners = function () {
+    return this._emitter.setMaxListeners.apply(this._emitter, arguments);
+};
+
+Node.prototype.listeners = function () {
+    return this._emitter.listeners.apply(this._emitter, arguments);
+};
+
+Node.prototype.emit = function () {
+    return this._emitter.emit.apply(this._emitter, arguments);
 };
 
 // ----------------------------- PROTECTED METHODS -----------------------------
@@ -114,7 +201,12 @@ Node.prototype._handleNodeDown = function (service) {
 };
 
 Node.prototype._handleMessage = function (data) {
-    this._emitter.emit('message', data);
+    data        = data.toString();
+    var sepPos  = data.indexOf(':');
+    var chan    = data.slice(0, sepPos);
+    var payload = data.slice(sepPos + 1);
+
+    this._emitter.emit('message', chan, payload);
 };
 
 Node.prototype._getBind = function (addr, port) {
