@@ -1,3 +1,7 @@
 # 1
 
-Clustering module based on 0MQ
+Distributed message queue based on 0MQ.
+
+--------------------------------------------------------------------------------
+
+**DO NOT USE THIS! NOT READY FOR ANY PURPOSE**

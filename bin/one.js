@@ -12,7 +12,9 @@ one.join(function (err) {
         console.log(chan + ':', payload);
     });
 
-    one.subscribe('somechan');
+    one.subscribe('somechan', function () {
+        console.log('subscribed!');
+    });
 
     setInterval(function () {
         one.publish('somechan', 'I\'m on caffeine!!');

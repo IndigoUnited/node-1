@@ -3,7 +3,8 @@ var zmq          = require('zmq');
 var mdns         = require('mdns');
 var mout         = require('mout');
 var uuid         = require('node-uuid');
-var net          = require('net')
+var net          = require('net');
+var async        = require('async');
 
 function freeport(cb) {
     var server = net.createServer();
@@ -50,6 +51,10 @@ var Node = function(opt) {
     this._pub = null;
     this._sub = null;
 
+    // mdns advertiser/browser
+    this._ad      = null;
+    this._browser = null;
+
     this._emitter = new EventEmitter();
 };
 
@@ -62,86 +67,133 @@ Node.prototype.join = function (callback) {
     // prepare sub
     this._sub.on('message', this._handleMessage);
 
-    // bind function for the pub socket
-    var bindPub = function () {
-        this._pub.bind(this._getBind(this._addr, this._pubPort), function (err) {
-            if (err) {
-                return callback(err);
+    async.waterfall([
+
+
+        // find pub port, if none is defined
+        function (next) {
+console.log(1);
+            // if port is not defined, find one
+            if (!this._pubPort) {
+                freeport(function (err, port) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    this._pubPort = port;
+
+                    next();
+                }.bind(this));
+            } else {
+                next();
             }
+        }.bind(this),
 
-            // successfuly joined
-            this._inCluster = true;
-            callback();
-        }.bind(this));
-    }.bind(this);
 
-    // if pub port is defined, use it. Else, find a free one
-    if (this._pubPort) {
-        bindPub();
-    }
-    else {
-        freeport(function (err, port) {
-            if (err) {
-                return callback(err);
-            }
+        // bind pub port
+        function (next) {
+console.log(2);
+            this._pub.bind(this._getBind(this._addr, this._pubPort), next);
+        }.bind(this),
 
-            this._pubPort = port;
 
-            bindPub();
-        }.bind(this));
-    }
+        function (next) {
+console.log(3);
+            // CONTINUE HERE. NEED TO START DISCOVERY AND SUBSCRIBE TO OTHER NODES
+            // IN ORDER TO HAVE JOINED THE CLUSTER. DO NOT START ADVERTISEMENT,
+            // SINCE THIS WILL ALLOW ME TO CREATE SPECIAL NODES THAT DO NOT 
+            // PUB MESSAGES, BUT CAN CONTROL WHAT'S GOING ON IN THE CLUSTER, LIKE
+            // CALCULATING MESSAGES PER SECOND
+            this._startDiscovery(next);
+        }.bind(this)
+
+
+    ], function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+
+        // successfuly joined
+        this._inCluster = true;
+
+        callback();
+    });
+
 
     return this;
 };
 
-Node.prototype.leave = function () {
+Node.prototype.leave = function (callback) {
     this._sub.close();
     this._pub.close();
 
-    delete this._sub;
-    delete this._pub;
+    this._sub = null;
+    this._pub = null;
 
     this._inCluster = false;
+
+    callback();
 
     return this;
 };
 
 Node.prototype.startAdvertise = function (callback) {
+    this._ad = mdns.createAdvertisement(mdns.tcp('indigo-one'), this._pubPort, {
+        name: this._id,
+        txtRecord: {
+            cluster: this._clusterId
+        }
+    }, function (err) {
+        if (err) {
+            return callback(err);
+        }
 
+        this._emitter.emit('advertise_start');
+
+        callback();
+    }.bind(this));
+
+    this._ad.start();
+
+    return this;
 };
 
 Node.prototype.stopAdvertise = function (callback) {
+    this._ad.stop();
 
+    this._ad = null;
+
+    this._emitter.emit('advertise_stop');
+
+    callback();
+
+    return this;
 };
 
-Node.prototype.startDiscovery = function (callback) {
-
-};
-
-Node.prototype.stopDiscovery = function (callback) {
-
-};
-
-Node.prototype.subscribe = function (channel) {
+Node.prototype.subscribe = function (channel, callback) {
     if (!this._inCluster) {
-        throw new Error('Can\'t subscribe while not in cluster');
+        callback(new Error('Can\'t subscribe while not in cluster'));
     }
 
     this._sub.subscribe(channel);
 
     this._emitter.emit('subscribe', channel);
 
+    callback();
+
     return this;
 };
 
-Node.prototype.unsubscribe = function (channel) {
+Node.prototype.unsubscribe = function (channel, callback) {
     if (!this._inCluster) {
-        throw new Error('Can\'t unsubscribe while not in cluster');
+        callback(new Error('Can\'t unsubscribe while not in cluster'));
     }
 
     this._sub.unsubscribe(channel);
 
     this._emitter.emit('unsubscribe', channel);
+
+    callback();
 
     return this;
 };
@@ -192,12 +244,68 @@ Node.prototype.emit = function () {
 
 // ----------------------------- PROTECTED METHODS -----------------------------
 
-Node.prototype._handleNodeUp = function (service) {
+Node.prototype._startDiscovery = function (callback) {
+    this._browser = mdns.createBrowser(mdns.tcp('indigo-one'), {
+        resolverSequence: [
+            mdns.rst.DNSServiceResolve(),
+            mdns.rst.getaddrinfo({
+                families: [4]
+            }),
+            mdns.rst.makeAddressesUnique()
+        ]
+    });
 
+    this._browser.on('serviceUp', this._handleNodeUp.bind(this));
+    this._browser.on('serviceDown', this._handleNodeDown.bind(this));
+
+    this._browser.start();
+
+    callback();
+
+    return this;
+};
+
+Node.prototype._stopDiscovery = function (callback) {
+    this._browser.stop();
+
+    this._browser.removeListener('serviceUp', this._handleNodeUp);
+    this._browser.removeListener('serviceDown', this._handleNodeDown);
+
+    this._browser = null;
+
+    callback();
+
+    return this;
+};
+
+Node.prototype._handleNodeUp = function (service) {
+    // if node already in cluster or belongs to other cluster, ignore
+    if (!mout.lang.isObject(this._cluster[service.name])
+        && service.txtRecord.cluster === this._cluster) {
+        // add node to this node's perception of the cluster
+        var info = {
+            id:        service.name,
+            timestamp: (new Date()).toJSON(),
+            address:   service.addresses[0],
+            port:      service.port,
+        };
+        this._cluster[service.name] = info;
+
+        // connect to its pub socket
+        this._sub.connect(this._getBind(info.address, info.port));
+
+        this._emitter.emit('node_up', info);
+    }
 };
 
 Node.prototype._handleNodeDown = function (service) {
+    // if node was in this cluster's perception of the cluster, remove it
+    if (mout.lang.isObject(this._cluster[service.name])) {
+        var info = mout.lang.deepClone(this._cluster[service.name]);
+        delete this._cluster[service.name];
 
+        this._emitter.emit('node_down', info);
+    }
 };
 
 Node.prototype._handleMessage = function (data) {
