@@ -40,7 +40,7 @@ var Node = function(opt) {
     opt = opt || {};
 
     // the id of the service that the node will provide
-    this._service = opt.service || 'indigo-one';
+    this._service = opt.service || 'indigo1cluster';
 
     // cluster which the node belongs to
     this._cluster = opt.cluster || 'default';

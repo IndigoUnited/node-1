@@ -53,20 +53,27 @@ one.on('message', function (chan, payload) {
     console.log('msg:', chan + ':', payload);
 });
 
+// note that the error event is only thrown if you do not specify a callback to
+// a method that could potentially throw an error
 one.on('error', function (err) {
     console.error('ERROR: ', err);
 });
 
+// the example below shows a an approach using callbacks. For the sake of
+// reducing the amount of code and logging, there won't be any checks for errors
+// and the info that is returned in the callbacks won't be used in any way,
+// being only there for informative purposes
 async.waterfall([
     function (next) {
         one.join(function (err, cluster) {
+
             next();
         });
     },
     function (next) {
         one.startAdvertise(function (err, adInfo) {
             next();
-        }); // TODO: try subscribing before any node is advertising, and then advertise, to check if the node gets the messages
+        });
     },
     function (next) {
         one.subscribe(chan, function (err, chan) {

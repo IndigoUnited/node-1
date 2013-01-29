@@ -6,15 +6,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": "",
+  "repository": "git@github.com:IndigoUnited/node-1.git",
   "keywords": [
+    "ØMQ",
     "0mq",
+    "zeromq",
     "cluster",
     "mq",
+    "message",
     "queue",
-    "nodes"
+    "nodes",
+    "distributed"
   ],
-  "author": "Marco Oliveira",
+  "author": "Indigo United",
   "license": "MIT",
   "dependencies": {
     "mdns": "~1.1.0",
