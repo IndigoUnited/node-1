@@ -8,8 +8,14 @@ var async        = require('async');
 
 var util         = require('util');
 
-function inspect(obj, depth) {
-    return util.inspect(obj, false, depth || 10, true);
+function inspect(obj, depth, multiLine) {
+    var res = util.inspect(obj, false, depth || 10, true);
+
+    if (!multiLine) {
+        res = res.replace(/(\r\n|\n|\r)/gm, ' ');
+    }
+
+    return res.replace(/\s+/g, ' ');
 }
 
 function freeport(cb) {
@@ -130,8 +136,7 @@ Node.prototype.join = function (callback) {
 
     ], function (err, result) {
         if (err) {
-            if (typeof(callback) === 'function') return callback(err);
-            else throw err;
+            return this._error(err, callback);
         }
 
         // successfuly joined
@@ -139,7 +144,7 @@ Node.prototype.join = function (callback) {
 
         // callback + emit join
         this._emitter.emit('join', this._cluster);
-        if (typeof(callback) === 'function') callback(null, this._cluster);
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); });
 
     }.bind(this));
 
@@ -159,12 +164,17 @@ Node.prototype.leave = function (callback) {
 
     // callback + emit
     this._emitter.emit('leave', this._cluster);
-    if (typeof(callback) === 'function') callback(null, this._cluster);
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); });
 
     return this;
 };
 
 Node.prototype.startAdvertise = function (details, callback) {
+    // fix params in case user does not provide details
+    if (typeof(details) === 'function') {
+        callback = details;
+        details  = null;
+    }
     details = details || {};
 
     // banner will be used to announce the service
@@ -181,7 +191,7 @@ Node.prototype.startAdvertise = function (details, callback) {
     // advertise service
     this._ad = mdns.createAdvertisement(mdns.tcp(this._service), this._pubPort, banner, function (err) {
         if (err) {
-            return callback(err);
+            return this._error(err, callback);
         }
 
         this._advertising = true;
@@ -193,7 +203,7 @@ Node.prototype.startAdvertise = function (details, callback) {
             banner:  banner
         };
         this._emitter.emit('advertise_start', this._adInfo);
-        if (typeof(callback) === 'function') callback(null, this._adInfo);
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); });
 
     }.bind(this));
 
@@ -209,40 +219,40 @@ Node.prototype.stopAdvertise = function (callback) {
     this._advertising = false;
 
     this._emitter.emit('advertise_stop', this._adInfo);
-    if (typeof(callback) === 'function') callback(null, this._adInfo);
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); });
 
     return this;
 };
 
 Node.prototype.subscribe = function (channel, callback) {
     if (!this._inCluster) {
-        return callback(new Error('Can\'t subscribe while not in cluster'));
+        return this._error(new Error('Can\'t subscribe while not in cluster'), callback);
     }
 
     this._sub.subscribe(channel);
 
     this._emitter.emit('subscribe', channel);
-    if (typeof(callback) === 'function') callback(null, channel);
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); });
 
     return this;
 };
 
 Node.prototype.unsubscribe = function (channel, callback) {
     if (!this._inCluster) {
-        return callback(new Error('Can\'t unsubscribe while not in cluster'));
+        return this._error(new new Error('Can\'t unsubscribe while not in cluster'), callback);
     }
 
     this._sub.unsubscribe(channel);
 
     this._emitter.emit('unsubscribe', channel);
-    if (typeof(callback) === 'function') callback(null, channel);
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); });
 
     return this;
 };
 
 Node.prototype.publish = function (channel, payload) {
     if (!this._inCluster) {
-        throw new Error('Can\'t publish while not in cluster');
+        return this._error(Error('Can\'t publish while not in cluster'));
     }
 
     this._emitter.emit('publish', channel, payload);
@@ -361,6 +371,12 @@ Node.prototype._handleMessage = function (data) {
 
 Node.prototype._getBind = function (addr, port) {
     return 'tcp://' + addr + ':' + port;
+}
+
+Node.prototype._error = function (err, callback) {
+    // note that the error event is only thrown if a callback was not provided
+    if (typeof(callback) === 'function') callback(err);
+    else this._emitter.emit('error', err);
 }
 
 
