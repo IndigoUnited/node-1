@@ -14,7 +14,12 @@ function inspect(obj, depth, multiLine) {
 
 var one = new One();
 
-var chan = 'somechan';
+console.log('Usage: one channel msg interval leaveTimeout');
+
+var chan         = process.argv[2] || 'somechan';
+var msg          = process.argv[3];
+var interval     = process.argv[4];
+var leaveTimeout = process.argv[5] || 0;
 
 // you can either use events or callbacks to handle the node
 one.on('join', function (cluster) {
@@ -76,31 +81,34 @@ async.waterfall([
         });
     },
     function (next) {
-        one.subscribe(chan, function (err, chan) {
+        if (chan) {
+            one.subscribe(chan, function (err, chan) {
+                next();
+            });
+        } else {
             next();
-        });
+        }
     }
-], function (err, result) {
-    if (err) {
-        console.error('Error creating cluster:', err);
-        process.exit(1);
+], function () {
+    var pubTimer;
+
+    if (chan && msg && interval) {
+
+        pubTimer = setInterval(function () {
+            one.publish(chan, msg);
+        }, interval);
     }
-
-    console.log('going to create timers');
-
-    var pubTimer = setInterval(function () {
-        one.publish(chan, 'I\'m a rabbit on caffeine!!');
-    }, 100);
 
     
+    if (leaveTimeout) {
+        setTimeout(function () {
+            clearInterval(pubTimer);
 
-    setTimeout(function () {
-        clearInterval(pubTimer);
+            one.leave(function () {
 
-        one.leave(function () {
-
-        });
-    }, 2000);
+            });
+        }, leaveTimeout);
+    }
 
 
 });
