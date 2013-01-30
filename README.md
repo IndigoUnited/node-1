@@ -1,12 +1,12 @@
-# 1
+# 1 (*One*)
 
 Distributed message queue based on [ØMQ](http://www.zeromq.org/).
 
 --------------------------------------------------------------------------------
 
-**DO NOT USE THIS! NOT READY FOR ANY PURPOSE**
+## Getting started
 
---------------------------------------------------------------------------------
+Take a look at `bin/one.js`.
 
 ## Installing
 
@@ -26,4 +26,8 @@ following:
 # apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq-dev
 ```
 
-You should now be able to run the service.
+### MacOS X
+
+You will need [XCode command line tools](http://developer.apple.com/library/ios/#documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_4_3.html)
+to install *One* on MacOS X, since it depends on
+[mdns](https://npmjs.org/package/mdns) and [zmq](https://npmjs.org/package/zmq).
