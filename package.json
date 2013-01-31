@@ -1,6 +1,6 @@
 {
   "name": "1",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Clustering module based on 0MQ",
   "main": "index.js",
   "scripts": {
