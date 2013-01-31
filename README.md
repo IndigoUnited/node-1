@@ -1,4 +1,4 @@
-# 1 *One*
+# 1 ( *One* )
 
 Distributed message queue based on [ØMQ](http://www.zeromq.org/).
 

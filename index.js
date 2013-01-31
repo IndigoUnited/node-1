@@ -239,7 +239,7 @@ Node.prototype.subscribe = function (channel, callback) {
 
 Node.prototype.unsubscribe = function (channel, callback) {
     if (!this._inCluster) {
-        return this._error(new new Error('Can\'t unsubscribe while not in cluster'), callback);
+        return this._error(new Error('Can\'t unsubscribe while not in cluster'), callback);
     }
 
     this._sub.unsubscribe(channel);
@@ -252,7 +252,7 @@ Node.prototype.unsubscribe = function (channel, callback) {
 
 Node.prototype.publish = function (channel, payload) {
     if (!this._inCluster) {
-        return this._error(Error('Can\'t publish while not in cluster'));
+        return this._error(new Error('Can\'t publish while not in cluster'));
     }
 
     this._emitter.emit('publish', channel, payload);
@@ -363,8 +363,8 @@ Node.prototype._handleNodeDown = function (service) {
 Node.prototype._handleMessage = function (data) {
     data        = data.toString();
     var sepPos  = data.indexOf(':');
-    var chan    = data.slice(0, sepPos);
-    var payload = data.slice(sepPos + 1);
+    var chan    = data.substr(0, sepPos);
+    var payload = data.substr(sepPos + 1);
 
     this._emitter.emit('message', chan, payload);
 };
