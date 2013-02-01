@@ -1,3 +1,5 @@
+'use strict';
+
 var EventEmitter = require('events').EventEmitter;
 var zmq          = require('zmq');
 var mdns         = require('mdns');
@@ -36,7 +38,7 @@ function freeport(cb) {
 
 // ------------------------------ CONSTRUCTOR ----------------------------------
 
-var Node = function(opt) {
+var Node = function (opt) {
     opt = opt || {};
 
     // the id of the service that the node will provide
@@ -134,7 +136,7 @@ Node.prototype.join = function (callback) {
         }.bind(this)
 
 
-    ], function (err, result) {
+    ], function (err) {
         if (err) {
             return this._error(err, callback);
         }
@@ -229,6 +231,8 @@ Node.prototype.subscribe = function (channel, callback) {
         return this._error(new Error('Can\'t subscribe while not in cluster'), callback);
     }
 
+    this._assertChanValid(channel, callback);
+
     this._sub.subscribe(channel);
 
     this._emitter.emit('subscribe', channel);
@@ -255,9 +259,11 @@ Node.prototype.publish = function (channel, payload) {
         return this._error(new Error('Can\'t publish while not in cluster'));
     }
 
+    this._assertChanValid(channel);
+
     this._emitter.emit('publish', channel, payload);
 
-    this._pub.send(channel + ':' + payload)
+    this._pub.send(channel + ':' + payload);
 
     return this;
 };
@@ -332,14 +338,14 @@ Node.prototype._stopDiscovery = function (callback) {
 
 Node.prototype._handleNodeUp = function (service) {
     // if node already in cluster or belongs to other cluster, ignore
-    if (!mout.lang.isObject(this._clusterTopology[service.name])
-        && service.txtRecord.cluster === this._cluster) {
+    if (!mout.lang.isObject(this._clusterTopology[service.name]) &&
+        service.txtRecord.cluster === this._cluster) {
         // add node to this node's perception of the cluster
         var info = {
             id:        service.name,
             timestamp: (new Date()).toJSON(),
             address:   service.addresses[0],
-            port:      service.port,
+            port:      service.port
         };
         this._clusterTopology[service.name] = info;
 
@@ -371,13 +377,22 @@ Node.prototype._handleMessage = function (data) {
 
 Node.prototype._getBind = function (addr, port) {
     return 'tcp://' + addr + ':' + port;
-}
+};
+
+Node.prototype._assertChanValid = function (channel, callback) {
+    if (channel.indexOf(':') > -1) {
+        this._error(new Error('Can\'t use commas in channel names'), callback);
+    }
+};
 
 Node.prototype._error = function (err, callback) {
     // note that the error event is only thrown if a callback was not provided
-    if (typeof(callback) === 'function') callback(err);
-    else this._emitter.emit('error', err);
-}
+    if (typeof(callback) === 'function') {
+        return callback(err);
+    }
+    
+    this._emitter.emit('error', err);
+};
 
 
 

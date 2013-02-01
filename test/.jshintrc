@@ -3,7 +3,13 @@
     "predef": [
         "console",
         "require",
-        "define"
+        "define",
+        "describe",
+        "before",
+        "beforeEach",
+        "after",
+        "afterEach",
+        "it"
     ],
 
     "node": true,

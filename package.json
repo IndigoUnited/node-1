@@ -26,5 +26,9 @@
     "mout": "~0.2.0",
     "node-uuid": "~1.4.0",
     "async": "~0.1.22"
+  },
+  "devDependencies": {
+    "mocha": "~1.8.1",
+    "expect.js": "~0.2.0"
   }
 }
