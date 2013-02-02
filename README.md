@@ -13,6 +13,11 @@ Take a look at `bin/one.js`.
 Before you install the module through NPM, using `npm install 1`, make sure you
 take care of the instructions below.
 
+The first thing to do, is to install ØMQ. Head to
+http://www.zeromq.org/intro:get-the-software and follow the instructions for
+your operating system. Then, use the instructions below, once again, depending
+on your operating system.
+
 **Note:** If you are installing on a system that is not covered by these
 instructions, and manage to install, please share your instructions, so we can
 improve the documentation.

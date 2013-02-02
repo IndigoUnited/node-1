@@ -146,7 +146,7 @@ Node.prototype.join = function (callback) {
 
         // callback + emit join
         this._emitter.emit('join', this._cluster);
-        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); });
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); }.bind(this));
 
     }.bind(this));
 
@@ -155,18 +155,24 @@ Node.prototype.join = function (callback) {
 };
 
 Node.prototype.leave = function (callback) {
-    this._sub.removeAllListeners();
-    this._sub.close();
-    this._pub.close();
+    this.stopAdvertise(function (err) {
+        if (err) {
+            return this._error(err, callback);
+        }
 
-    this._sub = null;
-    this._pub = null;
+        this._sub.removeAllListeners();
+        this._sub.close();
+        this._pub.close();
 
-    this._inCluster = false;
+        this._sub = null;
+        this._pub = null;
 
-    // callback + emit
-    this._emitter.emit('leave', this._cluster);
-    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); });
+        this._inCluster = false;
+
+        // callback + emit
+        this._emitter.emit('leave', this._cluster);
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); }.bind(this));
+    }.bind(this));
 
     return this;
 };
@@ -205,7 +211,7 @@ Node.prototype.startAdvertise = function (details, callback) {
             banner:  banner
         };
         this._emitter.emit('advertise_start', this._adInfo);
-        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); });
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); }.bind(this));
 
     }.bind(this));
 
@@ -221,7 +227,7 @@ Node.prototype.stopAdvertise = function (callback) {
     this._advertising = false;
 
     this._emitter.emit('advertise_stop', this._adInfo);
-    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); });
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._adInfo); }.bind(this));
 
     return this;
 };
@@ -236,7 +242,7 @@ Node.prototype.subscribe = function (channel, callback) {
     this._sub.subscribe(channel);
 
     this._emitter.emit('subscribe', channel);
-    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); });
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); }.bind(this));
 
     return this;
 };
@@ -249,7 +255,7 @@ Node.prototype.unsubscribe = function (channel, callback) {
     this._sub.unsubscribe(channel);
 
     this._emitter.emit('unsubscribe', channel);
-    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); });
+    if (typeof(callback) === 'function') process.nextTick(function () { callback(null, channel); }.bind(this));
 
     return this;
 };
