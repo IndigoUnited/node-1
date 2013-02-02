@@ -87,6 +87,10 @@ Node.prototype.getCluster = function () {
     return this._cluster;
 };
 
+Node.prototype.getClusterTopology = function () {
+    return this._clusterTopology;
+};
+
 Node.prototype.inCluster = function () {
     return this._inCluster;
 };
