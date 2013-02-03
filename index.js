@@ -159,26 +159,42 @@ Node.prototype.join = function (callback) {
 };
 
 Node.prototype.leave = function (callback) {
-    this.stopAdvertise(function (err) {
+    var that = this;
+
+    async.series([
+        function (next) {
+            that._stopDiscovery(next);
+        },
+        function (next) {
+            if (that._advertising) {
+                that.stopAdvertise(next);
+            } else {
+                next();
+            }
+        },
+        function (next) {
+            that._sub.removeAllListeners();
+            that._sub.close();
+            that._pub.close();
+
+            that._sub = null;
+            that._pub = null;
+
+            that._inCluster = false;
+
+            next();
+        }
+    ], function (err) {
         if (err) {
-            return this._error(err, callback);
+            return that._error(err, callback);
         }
 
-        this._sub.removeAllListeners();
-        this._sub.close();
-        this._pub.close();
-
-        this._sub = null;
-        this._pub = null;
-
-        this._inCluster = false;
-
         // callback + emit
-        this._emitter.emit('leave', this._cluster);
-        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, this._cluster); }.bind(this));
-    }.bind(this));
+        that._emitter.emit('leave', that._cluster);
+        if (typeof(callback) === 'function') process.nextTick(function () { callback(null, that._cluster); }.bind(that));
+    });
 
-    return this;
+    return that;
 };
 
 Node.prototype.startAdvertise = function (details, callback) {

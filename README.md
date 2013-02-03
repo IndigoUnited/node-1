@@ -14,9 +14,14 @@ Before you install the module through NPM, using `npm install 1`, make sure you
 take care of the instructions below.
 
 The first thing to do, is to install ØMQ. Head to
-http://www.zeromq.org/intro:get-the-software and follow the instructions for
-your operating system. Then, use the instructions below, once again, depending
-on your operating system.
+[http://www.zeromq.org/intro:get-the-software](http://www.zeromq.org/intro:get-the-software)
+and follow the instructions for your operating system. Then, use
+the instructions below, once again, depending on your operating system.
+
+Also, you might want to tune your OS in order to solve some known
+issues with default configurations. To do this, head out to
+[http://www.zeromq.org/docs:tuning-zeromq](http://www.zeromq.org/docs:tuning-zeromq),
+and follow the instructions.
 
 **Note:** If you are installing on a system that is not covered by these
 instructions, and manage to install, please share your instructions, so we can
