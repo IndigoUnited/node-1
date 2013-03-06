@@ -212,7 +212,7 @@ Node.prototype.startAdvertise = function (details, callback) {
             cluster: this._cluster
         }
     };
-    
+
     // mix the details with the banner, so that they also get advertised
     mout.object.mixIn(banner.txtRecord, details);
 
@@ -366,6 +366,7 @@ Node.prototype._handleNodeUp = function (service) {
     // if node already in cluster or belongs to other cluster, ignore
     if (!mout.lang.isObject(this._clusterTopology[service.name]) &&
         service.txtRecord.cluster === this._cluster) {
+
         // add node to this node's perception of the cluster
         var info = {
             id:        service.name,
@@ -373,6 +374,10 @@ Node.prototype._handleNodeUp = function (service) {
             address:   service.addresses[0],
             port:      service.port
         };
+
+        info.details = mout.lang.deepClone(service.txtRecord);
+        delete info.details.cluster;
+
         this._clusterTopology[service.name] = info;
 
         // connect to its pub socket
