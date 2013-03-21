@@ -1,8 +1,13 @@
 # 1 ( *One* )
 
-Distributed message queue based on [ØMQ](http://www.zeromq.org/).
+Clustering module based on [ØMQ](http://www.zeromq.org/).
 
 --------------------------------------------------------------------------------
+
+## Introduction
+
+*1* is a sort of magnet module, gluing together all the nodes that you launch
+in a network, and providing a channel based pub/sub.
 
 ## Getting started
 
