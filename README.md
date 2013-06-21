@@ -2,16 +2,17 @@
 
 Clustering module based on [ØMQ](http://www.zeromq.org/).
 
---------------------------------------------------------------------------------
 
 ## Introduction
 
 *1* is a sort of magnet module, gluing together all the nodes that you launch
 in a network, and providing a channel based pub/sub.
 
+
 ## Getting started
 
 Take a look at `bin/one.js`.
+
 
 ## Installing
 
@@ -32,6 +33,7 @@ and follow the instructions.
 instructions, and manage to install, please share your instructions, so we can
 improve the documentation.
 
+
 ### Linux
 
 Installing on debian-like operating systems, requires that you run the
@@ -40,6 +42,7 @@ following:
 ```
 # apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq-dev
 ```
+
 
 ### MacOS X
 
