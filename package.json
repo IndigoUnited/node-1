@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": "git@github.com:IndigoUnited/node-1.git",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:IndigoUnited/node-1.git"
+  },
   "keywords": [
     "ØMQ",
     "0mq",
