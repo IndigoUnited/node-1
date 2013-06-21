@@ -14,7 +14,7 @@ in a network, and providing a channel based pub/sub.
 Take a look at `bin/one.js`.
 
 
-## Installing
+## Installation
 
 Before you install the module through NPM, using `npm install 1`, make sure you
 take care of the instructions below.
@@ -49,3 +49,8 @@ following:
 You will need [XCode command line tools](http://developer.apple.com/library/ios/#documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_4_3.html)
 to install *One* on MacOS X, since it depends on
 [mdns](https://npmjs.org/package/mdns) and [zmq](https://npmjs.org/package/zmq).
+
+
+## License
+
+Released under the [MIT License](http://www.opensource.org/licenses/mit-license.php).
