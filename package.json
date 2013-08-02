@@ -4,9 +4,12 @@
   "description": "distributed message queue based on ØMQ",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -R spec"
   },
-  "repository": "git@github.com:IndigoUnited/node-1.git",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IndigoUnited/node-1.git"
+  },
   "keywords": [
     "ØMQ",
     "0mq",

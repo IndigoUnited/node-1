@@ -1,14 +1,20 @@
 # 1 ( *One* )
 
-Distributed message queue based on [ØMQ](http://www.zeromq.org/).
+Clustering module based on [ØMQ](http://www.zeromq.org/).
 
---------------------------------------------------------------------------------
+
+## Introduction
+
+*1* is a sort of magnet module, gluing together all the nodes that you launch
+in a network, and providing a channel based pub/sub.
+
 
 ## Getting started
 
 Take a look at `bin/one.js`.
 
-## Installing
+
+## Installation
 
 Before you install the module through NPM, using `npm install 1`, make sure you
 take care of the instructions below.
@@ -27,6 +33,7 @@ and follow the instructions.
 instructions, and manage to install, please share your instructions, so we can
 improve the documentation.
 
+
 ### Linux
 
 Installing on debian-like operating systems, requires that you run the
@@ -36,8 +43,14 @@ following:
 # apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq-dev
 ```
 
+
 ### MacOS X
 
 You will need [XCode command line tools](http://developer.apple.com/library/ios/#documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_4_3.html)
 to install *One* on MacOS X, since it depends on
 [mdns](https://npmjs.org/package/mdns) and [zmq](https://npmjs.org/package/zmq).
+
+
+## License
+
+Released under the [MIT License](http://www.opensource.org/licenses/mit-license.php).
