@@ -189,6 +189,8 @@ Node.prototype.leave = function (callback) {
             return that._error(err, callback);
         }
 
+        that._clusterTop = {};
+
         // callback + emit
         that._emitter.emit('leave', that._cluster);
         if (typeof(callback) === 'function') process.nextTick(function () { callback(null, that._cluster); }.bind(that));

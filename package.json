@@ -1,6 +1,6 @@
 {
   "name": "1",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "distributed message queue based on ØMQ",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "author": "Indigo United",
   "license": "MIT",
   "dependencies": {
-    "mdns": "~1.1.0",
+    "mdns": "https://github.com/agnat/node_mdns/tarball/master",
     "zmq": "~2.2.0",
     "mout": "~0.2.0",
     "node-uuid": "~1.4.0",
