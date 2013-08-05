@@ -25,7 +25,7 @@
   "license": "MIT",
   "dependencies": {
     "mdns": "https://github.com/agnat/node_mdns/tarball/master",
-    "zmq": "~2.2.0",
+    "zmq": "~2.4.0",
     "mout": "~0.2.0",
     "node-uuid": "~1.4.0",
     "async": "~0.1.22"
