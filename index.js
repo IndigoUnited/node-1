@@ -2,7 +2,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 var zmq          = require('zmq');
-var mdns         = require('mdns');
+var mdns         = require('mdns2');
 var mout         = require('mout');
 var uuid         = require('node-uuid');
 var net          = require('net');
