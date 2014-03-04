@@ -7,7 +7,7 @@ var mout         = require('mout');
 var uuid         = require('node-uuid');
 var freeport     = require('./lib/freeport');
 var async        = require('async');
-var inherits     = require('util').inherit;
+var inherits     = require('util').inherits;
 
 
 
