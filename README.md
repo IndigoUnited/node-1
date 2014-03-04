@@ -1,6 +1,6 @@
 # 1 ( *One* )
 
-Clustering module based on [ØMQ](http://www.zeromq.org/).
+Distributed pub/sub based in [ØMQ](http://www.zeromq.org/).
 
 *1* (pronounced One) is a sort of magnet module, gluing together all the nodes that you launch in a network, and providing a simple pub/sub. It allows you to separate several services in the same network by means of 
 

@@ -1,7 +1,7 @@
 {
   "name": "1",
-  "version": "0.1.0",
-  "description": "Distributed pub/sub based on ØMQ",
+  "version": "0.1.1",
+  "description": "Distributed pub/sub based in ØMQ",
   "main": "index.js",
   "scripts": {
     "test": "mocha -R spec"

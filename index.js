@@ -6,14 +6,16 @@ var mdns         = require('mdns2');
 var mout         = require('mout');
 var uuid         = require('node-uuid');
 var freeport     = require('./lib/freeport');
-// var inspect      = require('./lib/inspect');
 var async        = require('async');
+var inherits     = require('util').inherit;
 
 
 
 // ------------------------------ CONSTRUCTOR ----------------------------------
 
 var One = function (opt) {
+    EventEmitter.call(this);
+
     opt = opt || {};
 
     // the id of the service that the node will provide
@@ -48,9 +50,9 @@ var One = function (opt) {
 
     // information that is used to advertise the service
     this._adInfo  = null;
-
-    this._emitter = new EventEmitter();
 };
+
+inherits(One, EventEmitter);
 
 // ----------------------------- PUBLIC METHODS --------------------------------
 
@@ -82,8 +84,6 @@ One.prototype.join = function (callback) {
     this._sub.on('message', this._handleMessage.bind(this));
 
     async.waterfall([
-
-
         // find pub port, if none is defined
         function (next) {
             // if port is not defined, find one
@@ -184,7 +184,7 @@ One.prototype.advertise = function (details, callback) {
 
     // banner will be used to announce the service
     var banner = {
-        id: this._id,
+        name: this._id,
         txtRecord: {
             cluster: this._cluster
         }
@@ -271,38 +271,6 @@ One.prototype.publish = function (channel, payload) {
     return this;
 };
 
-One.prototype.addListener = function () {
-    return this._emitter.addListener.apply(this._emitter, arguments);
-};
-
-One.prototype.on = function () {
-    return this._emitter.on.apply(this._emitter, arguments);
-};
-
-One.prototype.once = function () {
-    return this._emitter.once.apply(this._emitter, arguments);
-};
-
-One.prototype.removeListener = function () {
-    return this._emitter.removeListener.apply(this._emitter, arguments);
-};
-
-One.prototype.removeAllListeners = function () {
-    return this._emitter.removeAllListeners.apply(this._emitter, arguments);
-};
-
-One.prototype.setMaxListeners = function () {
-    return this._emitter.setMaxListeners.apply(this._emitter, arguments);
-};
-
-One.prototype.listeners = function () {
-    return this._emitter.listeners.apply(this._emitter, arguments);
-};
-
-One.prototype.emit = function () {
-    return this._emitter.emit.apply(this._emitter, arguments);
-};
-
 // ----------------------------- PROTECTED METHODS -----------------------------
 
 One.prototype._startDiscovery = function (callback) {
@@ -341,12 +309,12 @@ One.prototype._stopDiscovery = function (callback) {
 
 One.prototype._handleNodeUp = function (banner) {
     // if node already in cluster or belongs to other cluster, ignore
-    if (!mout.lang.isObject(this._clusterTopology[banner.id]) &&
+    if (!mout.lang.isObject(this._clusterTopology[banner.name]) &&
         banner.txtRecord.cluster === this._cluster) {
 
         // add node to this node's perception of the cluster
         var info = {
-            id:        banner.id,
+            id:        banner.name,
             timestamp: (new Date()).toJSON(),
             address:   banner.addresses[0],
             port:      banner.port
@@ -399,7 +367,7 @@ One.prototype._error = function (err, callback) {
     if (typeof(callback) === 'function') {
         return callback(err);
     }
-    
+
     this._emitter.emit('error', err);
 };
 
