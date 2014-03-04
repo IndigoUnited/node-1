@@ -44,7 +44,7 @@ to install *One* on MacOS X, since it depends on
 
 ## Getting started
 
-```
+```js
 var One = require('1');
 
 var one = new One();
@@ -79,7 +79,7 @@ one.join(function (err, cluster) {
 
 Here's a more elaborate way of instantiating One, with a few extra options:
 
-```
+```js
 // You can pass a few options when instantiating One.
 // Note that these are all optional, and you can instantiate without any option.
 // The example below shows all the default options.
@@ -113,7 +113,7 @@ Upon instantiation of *One*, you can specify the `service` which you are providi
 
 Usage:
 
-```
+```js
 var one = new One({
     service: 'myStorageService'
 });
@@ -140,7 +140,7 @@ Unlike `service`, clustering allows you to partition multiple nodes of the same 
 
 Usage:
 
-```
+```js
 var one = new One({
     service: 'myStorageService',
     cluster: 'cluster1'
@@ -163,7 +163,7 @@ one.leave(function (err, cluster) {
 
 Here's a complete list of the available events that you can listen to:
 
-```
+```js
 one.on('join', function (cluster) {
     console.log('joined cluster:', cluster);
 });
