@@ -124,7 +124,7 @@ One.prototype.join = function (callback) {
         this._inCluster = true;
 
         // callback + emit join
-        this._emitter.emit('join', this._cluster);
+        this.emit('join', this._cluster);
         callback && process.nextTick(callback.bind(null, null, this._cluster));
 
     }.bind(this));
@@ -207,7 +207,7 @@ One.prototype.advertise = function (details, callback) {
             port:    this._pubPort,
             banner:  banner
         };
-        this._emitter.emit('advertise_start', this._adInfo);
+        this.emit('advertise_start', this._adInfo);
         callback && process.nextTick(callback.bind(null, null, this._adInfo));
 
     }.bind(this));
@@ -223,7 +223,7 @@ One.prototype.stopAdvertise = function (callback) {
     this._ad          = null;
     this._advertising = false;
 
-    this._emitter.emit('advertise_stop', this._adInfo);
+    this.emit('advertise_stop', this._adInfo);
     callback && process.nextTick(callback.bind(null, null, this._adInfo));
 
     return this;
@@ -238,7 +238,7 @@ One.prototype.subscribe = function (channel, callback) {
 
     this._sub.subscribe(channel + ':'); // ":" added for separating chan from msg
 
-    this._emitter.emit('subscribe', channel);
+    this.emit('subscribe', channel);
     callback && process.nextTick(callback.bind(null, null, channel));
 
     return this;
@@ -251,7 +251,7 @@ One.prototype.unsubscribe = function (channel, callback) {
 
     this._sub.unsubscribe(channel + ':'); // ":" added for separating chan from msg
 
-    this._emitter.emit('unsubscribe', channel);
+    this.emit('unsubscribe', channel);
     callback && process.nextTick(callback.bind(null, null, channel));
 
     return this;
@@ -264,7 +264,7 @@ One.prototype.publish = function (channel, payload) {
 
     this._assertChanValid(channel);
 
-    this._emitter.emit('publish', channel, payload);
+    this.emit('publish', channel, payload);
 
     this._pub.send(channel + ':' + payload);
 
@@ -328,7 +328,7 @@ One.prototype._handleNodeUp = function (banner) {
         // connect to its pub socket
         this._sub.connect(this._getBind(info.address, info.port));
 
-        this._emitter.emit('node_up', info);
+        this.emit('node_up', info);
     }
 };
 
@@ -338,7 +338,7 @@ One.prototype._handleNodeDown = function (banner) {
         var info = mout.lang.deepClone(this._clusterTopology[banner.name]);
         delete this._clusterTopology[banner.name];
 
-        this._emitter.emit('node_down', info);
+        this.emit('node_down', info);
     }
 };
 
@@ -349,7 +349,7 @@ One.prototype._handleMessage = function (data) {
         payload = data.substr(sepPos + 1)
     ;
 
-    this._emitter.emit('message', chan, payload);
+    this.emit('message', chan, payload);
 };
 
 One.prototype._getBind = function (addr, port) {
@@ -368,7 +368,7 @@ One.prototype._error = function (err, callback) {
         return callback(err);
     }
 
-    this._emitter.emit('error', err);
+    this.emit('error', err);
 };
 
 
