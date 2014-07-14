@@ -31,7 +31,7 @@ Installing on debian-like operating systems, requires that you run the
 following:
 
 ```
-# apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq-dev
+# apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq3-dev
 ```
 
 
