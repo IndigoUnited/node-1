@@ -4,7 +4,7 @@
   "description": "Distributed pub/sub based in ØMQ",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
