@@ -11,6 +11,9 @@
         "cancelAnimationFrame"
     ],
 
+    "esversion": 6,
+    "esnext": true,
+
     "browser": false,
     "node": true,
     "devel": true,
@@ -38,7 +41,7 @@
     "debug": false,
     "eqnull": true,
     "es3": true,
-    "esnext": false,
+    "t": false,
     "evil": false,
     "expr": true,
     "funcscope": false,

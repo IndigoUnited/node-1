@@ -1,213 +1,162 @@
-# 1 ( *One* )
+- One
+    - The core module that manages what's happening.
+    - Several hooks available for plugins:
+        - Service lifecycle:
+            - `node.create.before`: before service node is created.
+            - `node.announce`: after user calls the *announce* callback, or implicitly if user calls the *ready* callback before having called the *announce* callback.
+            - `node.create.after`: after service node has been set up, and is ready to be consumed. Always after `node.announce`.
+            - `service.up`
+            - `node.up`
+            - `node.destroy.before`:
+            - `node.destroy.after`:
+            - `node.down`
+            - `service.down`
+            - `service.get`
+            - `service.release`
+        - Work pipeline:
+            - `work.write.before`
+            - `work.write.after`
+            - `work.read.before`
+            - `work.read.after`
 
-Distributed pub/sub based in [ØMQ](http://www.zeromq.org/).
+    - Hooks can be used by plugins to prevent default behavior and to modify data within the hook. All hooks are async, and are called by the order that the plugins were added.
+- Service
+    - Services internally possess a `work` Duplex stream, which handles data in the format `{ plugin: 'rpc', payload: 'some payload here' }`. This applies both to data written into and read from the service, and the `plugin` field specifies which plugin will be responsible for encoding or decoding the data.
+- Service discovery (Duplex stream):
+    - One version is advertised, which dictates that incompatible versions do not interact.
+    - Emits `data` with changes in the topology: `{ type: 'service.up/service.down/node.up/node.down' }`.
+    - Services announce which plugins they are using, along with their versions, maybe even the Transports and their versions as well.
+    - Can use multiple discovery agents simultaneously:
+        - https://github.com/mrhooray/swim-js
+        - MDNS.
+        - etcd.
+        - file watch.
+        - Generic function polling: User provided function is polled in order to get configuration (full or diff), and the diff is computed automatically from previous if necessary.
+        - Generic stream: User provided stream is listened to in order to get configuration changes (full or diff), and the diff is computed automatically from previous if necessary.
+- Plugins
+    - `ReqRep`/`RPC`:
+        - Hooks: `rpc.req`, `rpc.res`.
+        - Errors should propagate back and the stack should be concatenated throughout the services, to simplify debugging. Might require having an config to disable this.
+    - `EventEmitter`:
+        - Hooks: `eventemitter.data.write`, `eventemitter.data.read`.
+    - `Stream`:
+        - Need to think about how a service can be a Writable, Readable, Transform, Passthrough or Duplex stream.
+    - `Versioning`: Version control for services.
+    - `Authentication`: Authenticate access to a service.
+    - `Authorisation`: Check authorisation to perform operation.
+    - `Namespace`: Separate similar services, useful for environments.
+    - Plugins can emit hooks that other plugins will listen to.
+    - Can have their own Transport (Duplex streams):
+        - Sockets.
+        - HTTP.
+        - ZeroMQ.
+        - Inproc (in process).
+        - Transports have versions, and a consumer will only connect to a provider of compatible versions.
+        - Transports need an encoder and decoder pipeline (Transform streams):
+            - Encoders/decoders can be piped in order to transform data that is written into or read from the service.
+            - Encryption.
+            - Compression.
+            - Serialization:
+                - JSONRPC
+                - XMLRPC
+                - Protobuf (https://github.com/dcodeIO/ProtoBuf.js/)
+                - Consider having a `Stream` serialiser, that looks for streams in the data and exposes a structure that allows the stream to be used from another service. Options to transport this stream could be:
+                    - HTTP stream
+                    - Socket stream
+                    - Should allow providing an encode and decode stream, so that user can perform operations on the transport itself like encryption and compression.
 
-*1* (pronounced One) is a sort of magnet module, gluing together all the nodes that you launch in a network, and providing a simple pub/sub. It allows you to separate several services in the same network by means of 
+## Thoughts
 
+- Try to use as little native modules as possible, so that One can run on any Node.js environment.
 
-## Installation
+- Should provide an "in process" transport as well, to optimize communication.
+- "max pending calls" should be configurable and defaulted to reasonable value.
+- Allow multi-get of services.
+- timeout if get service takes too long.
+- Support nested objects in service definition.
+- Make callbacks optional. Sometimes not necessary.
+- Should support Promises.
+- Limit amount of connections on consumer to available providers.
+- "service release" method that cleans up the connections.
+- Consider using https://github.com/mafintosh/polo instead of mdns2. Also, mdns is now active again. Maybe should replace? (https://github.com/kmpm/node-mdns-js)
+- REPL for directly managing cluster and interacting with services. See http://learnboost.github.io/cluster/docs/repl.html for inspiration.
+- Create mechanism for easily aggregating services, like RESTful services, which likely need to be proxied and load balanced. Might not be a feature at "One" level, probably something built on top, but still would like to have it.
+- Add ability for true "once" event handlers.
 
-Before you install the module through NPM, using `npm install 1`, make sure you
-take care of the instructions below.
-
-The first thing to do, is to install ØMQ. Head to
-[http://www.zeromq.org/intro:get-the-software](http://www.zeromq.org/intro:get-the-software)
-and follow the instructions for your operating system. Then, use
-the instructions below, once again, depending on your operating system.
-
-Also, you might want to tune your OS in order to solve some known
-issues with default configurations. To do this, head out to
-[http://www.zeromq.org/docs:tuning-zeromq](http://www.zeromq.org/docs:tuning-zeromq),
-and follow the instructions.
-
-**Note:** If you are installing on a system that is not covered by these
-instructions, and manage to install, please share your instructions, so we can
-improve the documentation.
-
-
-### Linux
-
-Installing on debian-like operating systems, requires that you run the
-following:
-
-```
-# apt-get install libavahi-compat-libdnssd-dev libc-ares2 libzmq-dev
-```
-
-
-### MacOS X
-
-You will need [XCode command line tools](http://developer.apple.com/library/ios/#documentation/DeveloperTools/Conceptual/WhatsNewXcode/Articles/xcode_4_3.html)
-to install *One* on MacOS X, since it depends on
-[mdns](https://npmjs.org/package/mdns) and [zmq](https://npmjs.org/package/zmq).
-
-
-## Getting started
+## Introduction
 
 ```js
-var One = require('1');
+const One = require('1');
 
-var one = new One();
+const one = new One();
 
-// Let's do something when we receive messages.
-one.on('message', function (chan, msg) {
-    console.info(chan + '>', msg);
+one.create('calculator', (err, calculator, serviceReadyCb, announceServiceCb) => {
+    if (err) {
+        return console.error(err);
+    }
+
+    calculator.multiply = function (a, b, callback) {
+        callback(null, a * b);
+    }
+
+    calculator.double = function (a, callback) {
+        // you can use other methods from the service;
+        this.multiply(a, 2, callback);
+    }
+
+    // by calling serviceReadyCb, announceServiceCb is implicitly called if it
+    // hasn't been called yet
+    serviceReadyCb();
 });
 
-// Join the cluster.
-one.join(function (err, cluster) {
-    err && throw new Error('Unable to join cluster: ' + err);
+one.get('calculator', (err, calculator) => {
+    if (err) {
+        return console.error(err);
+    }
 
-    // Advertise the service.
-    one.advertise(function (err, adInfo) {
-        err && throw new Error('Unable to advertise service: ' + err);
+    calculator.double(4, (err, result) => {
+        if (err) {
+            return console.error(err);
+        }
 
-        // Subscribe a channel
-        one.subscribe('some_channel', function (err, chan) {
-            err && throw new Error('Unable to subscribe channel: ' + err);
-
-            // Let's send a message to the channel periodically
-            setTimeout(function () {
-                one.publish('some_channel', 'You will be notified of this message');
-
-                one.publish('some_channel_you_did_not_subscribe', 'You will not get this message');
-            }, 500);
-        });
+        console.log(result); // 8
     });
 });
+
+
+// or you can use the Promise based API
+
+
+one.create('calculator')
+.then((res) => {
+    let { calculator, announceServiceCb } = res;
+
+    // you can call announceServiceCb once you've added all methods to the
+    // service, so that the service starts getting announced for discovery.
+    // This can be used to solve circular dependencies.
+
+    calculator.multiply = function (a, b) {
+        // you can declare your methods both Promise style or callback style
+        // and the consumer can consume in both styles, it's transparent to
+        // the consumer
+        return new Promise((resolve, reject) => {
+            resolve(a * b);
+        });
+    }
+
+    calculator.double = function (a) {
+        // call other methods from the service using Promise style
+        return this.multiply(a, 2);
+    }
+
+    return calculator;
+})
+.catch((err) => {
+    console.error(err);
+});
+
+one.get('calculator')
+.then(calculator => calculator.double(4))
+.then(result => console.log(result))
+.catch(err => console.error(err));
 ```
-
-Here's a more elaborate way of instantiating One, with a few extra options:
-
-```js
-// You can pass a few options when instantiating One.
-// Note that these are all optional, and you can instantiate without any option.
-// The example below shows all the default options.
-var one = new One({
-    // Id of the service you will be providing.
-    service: 'unnamedService',
-
-    // Cluster which this node belongs to.
-    cluster: 'defaultCluster',
-
-    // Id of this node. If null, a random id is generated.
-    id:      null,
-
-    // Port used for publishing messages. If null, a free random port is used.
-    port:    null,
-
-    // Interface in which the node will bind.
-    address: '0.0.0.0'
-});
-```
-
-## Reference
-
-### Introduction
-
-This module can be used to easily create auto discoverable services that communicate through means of a distributed pub/sub. Unlike solutions based on Redis or some message queueing software, this module is based on 0MQ, enabling you to create a pub/sub without a single point of failure or bottleneck. 
-
-### Advertising service
-
-Upon instantiation of *One*, you can specify the `service` which you are providing. This acts as an immediate identifier in case you create multiple service types that you don't want talking to each other. Only after you start advertising other nodes in the cluster will realise you have joined and listen to you. Until that moment, you are a silent node, which is only capable of listening.
-
-Usage:
-
-```js
-var one = new One({
-    service: 'myStorageService'
-});
-
-// ...
-
-// Advertising service
-one.advertise(function (err, adInfo) {
-    !err && console.log('Advertising', adInfo);
-});
-
-// ...
-
-// Stopping advertisement
-one.stopAdvertise(function (err, adInfo) {
-    !err && console.log('Stopped advertising', adInfo);
-});
-
-```
-
-### Clustering
-
-Unlike `service`, clustering allows you to partition multiple nodes of the same service in the same network. Basically, only nodes belonging to the same `cluster` will talk to each other.
-
-Usage:
-
-```js
-var one = new One({
-    service: 'myStorageService',
-    cluster: 'cluster1'
-});
-
-// Joining cluster
-one.join(function (err, cluster) {
-    !err && console.log('Joined', cluster);
-});
-
-// ...
-
-// Leaving cluster
-one.leave(function (err, cluster) {
-    !err && console.log('Left', cluster);
-});
-```
-
-### Events
-
-Here's a complete list of the available events that you can listen to:
-
-```js
-one.on('join', function (cluster) {
-    console.log('joined cluster:', cluster);
-});
-
-one.on('leave', function (cluster) {
-    console.log('left cluster:', cluster);
-});
-
-one.on('advertise_start', function (adInfo) {
-    console.log('started advertising:', adInfo);
-});
-
-one.on('advertise_stop', function (adInfo) {
-    console.log('stopped advertising:', adInfo);
-});
-
-one.on('subscribe', function (channel) {
-    console.log('subscribed:', channel);
-});
-
-one.on('unsubscribe', function (channel) {
-    console.log('unsubscribed:', channel);
-});
-
-one.on('node_up', function (node) {
-    console.log('node up:', node);
-});
-
-one.on('node_down', function (node) {
-    console.log('node down:', node);
-});
-
-one.on('message', function (chan, payload) {
-    console.log(chan + '>', payload);
-});
-
-// Note that the error event is only emitted if you do not specify a callback to
-// a method that throws an error.
-one.on('error', function (err) {
-    console.error('ERROR: ', err);
-});
-```
-
-
-## License
-
-Released under the [MIT License](http://www.opensource.org/licenses/mit-license.php).
